@@ -1,0 +1,17 @@
+[
+	{
+		"modid": "classic_utilities",
+		"name": "Classic Utilities",
+		"description": "Keybindable freecam and fullbright.",
+		"version": "${version}",
+		"mcversion": "1.4.7",
+		"url": "",
+		"updateUrl": "",
+		"authors": ["javaDrinker"],
+		"parent": "",
+		"screenshots": [],
+		"dependencies": [
+			"mod_MinecraftForge"
+		]
+	}
+]
