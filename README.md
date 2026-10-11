@@ -1,4 +1,4 @@
-# Utility Keys
+# Classic Utilities
 
 I couldn't find a mod for 1.4.7 that added freecam or fullbright :p
 
