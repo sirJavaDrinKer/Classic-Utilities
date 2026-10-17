@@ -1,8 +1,10 @@
 package classic_utilities;
 
 public final class FreecamMath {
-    // Where does a mathematician go when they're hurt? L'Hospital.
-	private FreecamMath() {}
+    /*      Where does a mathematician go when they're hurt? L'Hospital.
+    *       *Audience Laughter*
+    */
+    private FreecamMath() {}
 	public static double[] velocity(float yawDegrees, float pitchDegrees, double forward, double strafe, double vertical, double speed) {
 
         double yaw = Math.toRadians(yawDegrees);
