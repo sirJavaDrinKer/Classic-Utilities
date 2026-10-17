@@ -1,22 +1,22 @@
 # Classic Utilities
 
 I couldn't find a mod for 1.4.7 that added freecam or fullbright :p
++ Now with Light Overlay!
 
 Supported Versions: 
 - Forge 1.4.7
 
 ## Controls
 
-| Function   | Key  |
-|------------|------|
-| Freecam    | `F6` |
-| Fullbright | `F7` |
+| Function   | Key  | Functionality |
+|------------|------|---------------|
+| Freecam    | `V` | Detaches the camera from the player and allows them to fly their camera around |
+| Fullbright | `F` | Maxes out the gamma so the player can see fine in dark areas |
+| Light Overlay | `L` | Shows areas where hostile mobs are capable of spawning |
 
 Freecam should automatically switch off when your character is interrupted (killed, switch dimensions, etc).
 
 ## Building
-
-You need nothing installed except a JDK (17 is fine to *run* gradle)
 
 ```
 ./gradlew build
