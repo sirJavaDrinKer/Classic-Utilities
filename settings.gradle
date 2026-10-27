@@ -21,9 +21,8 @@ rootProject.name = name
 include(
 	"Core",
 	
-	"Forge-1.4.7"
-	
-	//Future versions here
-	//"Forge-1.7.10",
-	//"Forge-1.12.2",
+	"Forge-1.3.2",
+	"Forge-1.4.7",
+	"Forge-1.5.2"
+
 )
