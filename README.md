@@ -7,9 +7,11 @@ Supported Versions:
 - Forge 1.3.2
 - Forge 1.4.7
 - Forge 1.5.2
+
 Planned:
 - Forge 1.6.4
 - Forge 1.7.10
+
 Possible:
 - Forge 1.2.5 (depending on how much of a pain in the rear it is)
 - Legacy fabric versions. (haven't looked into)
