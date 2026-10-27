@@ -4,7 +4,9 @@ I couldn't find a mod for 1.4.7 that added freecam or fullbright :p
 + Now with Light Overlay!
 
 Supported Versions: 
+- Forge 1.3.2
 - Forge 1.4.7
+- Forge 1.5.2
 
 ## Controls
 
