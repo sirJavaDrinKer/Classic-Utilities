@@ -22,14 +22,26 @@ public abstract class ClassicUtilities {
     public static final int HUD_HOLD_MS = 2000;
     public static final int HUD_FADE_MS = 1000;
 
+    public static final float ZOOM_DEFAULT = 4.0F;
+    public static final float ZOOM_MIN = 1.25F;
+    public static final float ZOOM_MAX = 40.0F;
+    public static final float ZOOM_STEP = 1.15F;
+    public static final int ZOOM_HUD_HOLD_MS = 700;
+    public static final int ZOOM_HUD_FADE_MS = 400;
+
     private boolean freecam;
     private boolean fullbright;
     private boolean lightOverlay;
+    private boolean chunkBorders;
+    private boolean zoomHeld;
+    private boolean zoomApplied;
+    private float zoomFactor = ZOOM_DEFAULT;
     private int overlayTimer;
     private float savedGamma = 1.0F;
     private boolean gammaChecked;
 
     protected final SpawnScan spawnScan = new SpawnScan();
+    protected final ChunkBorderMesh chunkBorderMesh = new ChunkBorderMesh();
     protected final HudMessage hudMessage = new HudMessage();
 
     public ClassicUtilities() {
@@ -54,6 +66,12 @@ public abstract class ClassicUtilities {
 
     protected abstract void lightOverlayScan();
 
+    protected abstract void zoomApply(float factor);
+
+    protected abstract void zoomRestore();
+
+    protected abstract int zoomConsumeScroll(boolean zoomActive);
+
     public void showMessage(String text) {
         showMessage(text, HUD_HOLD_MS, HUD_FADE_MS);
     }
@@ -72,6 +90,18 @@ public abstract class ClassicUtilities {
 
     public boolean isLightOverlay() {
         return lightOverlay;
+    }
+
+    public boolean isChunkBorders() {
+        return chunkBorders;
+    }
+
+    public boolean isZooming() {
+        return zoomHeld;
+    }
+
+    public float getZoomFactor() {
+        return zoomFactor;
     }
 
     public void toggleFreecam() {
@@ -107,6 +137,27 @@ public abstract class ClassicUtilities {
         showMessage("Light Overlay: " + (lightOverlay ? "ON" : "OFF"));
     }
 
+    public void toggleChunkBorders() {
+        chunkBorders = !chunkBorders;
+        showMessage("Chunk Borders: " + (chunkBorders ? "ON" : "OFF"));
+    }
+
+    public void setZoomHeld(boolean held) {
+        zoomHeld = held;
+    }
+
+    public void zoomRenderStart() {
+        if(!zoomHeld) return;
+        zoomApplied = true;
+        zoomApply(zoomFactor);
+    }
+
+    public void zoomRenderEnd() {
+        if(!zoomApplied) return;
+        zoomApplied = false;
+        zoomRestore();
+    }
+
     public void clientTickStart() {
         if(!gammaChecked) {
             gammaChecked = true;
@@ -132,6 +183,12 @@ public abstract class ClassicUtilities {
         if(lightOverlay && --overlayTimer <= 0) {
             overlayTimer = OVERLAY_REFRESH_TICKS;
             lightOverlayScan();
+        }
+
+        int notches = zoomConsumeScroll(zoomHeld);
+        if(notches != 0) {
+            zoomFactor = ZoomMath.step(zoomFactor, notches, ZOOM_STEP, ZOOM_MIN, ZOOM_MAX);
+            showMessage("Zoom: " + ZoomMath.format(zoomFactor) + "x", ZOOM_HUD_HOLD_MS, ZOOM_HUD_FADE_MS);
         }
     }
 

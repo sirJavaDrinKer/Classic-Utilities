@@ -3,21 +3,30 @@ package classic_utilities.forge;
 import net.minecraft.client.Minecraft;
 import net.minecraft.src.EntityClientPlayerMP;
 import net.minecraft.src.FontRenderer;
+import net.minecraft.src.GuiScreen;
 import net.minecraft.src.ScaledResolution;
 import net.minecraft.src.Tessellator;
 import net.minecraft.src.GameSettings;
+import net.minecraft.src.Enchantment;
 import net.minecraft.src.EnumCreatureType;
 import net.minecraft.src.EntityLiving;
+import net.minecraft.src.ContainerEnchantment;
 import net.minecraft.src.MathHelper;
 import net.minecraft.src.MovementInput;
 import net.minecraft.src.EnumSkyBlock;
 import net.minecraft.src.SpawnerAnimals;
 import net.minecraft.src.World;
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
+import classic_utilities.EnchantPreview;
 import classic_utilities.FreecamMath;
 import classic_utilities.ClassicUtilities;
 import classic_utilities.SpawnScan;
+import classic_utilities.ZoomMath;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public abstract class ClassicUtilities132 extends ClassicUtilities {
@@ -254,5 +263,202 @@ public abstract class ClassicUtilities132 extends ClassicUtilities {
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         font.drawStringWithShadow(text, x, y, (alpha << 24) | 0xFFFFFF);
         GL11.glPopAttrib();
+    }
+
+    private boolean zoomOverridden;
+    private float zoomSavedFov;
+    private float zoomSavedSensitivity;
+    private int lastHotbarSlot;
+
+    @Override
+    protected void zoomApply(float factor) {
+        GameSettings gs = client.gameSettings;
+
+        if(!zoomOverridden) {
+            zoomSavedFov = gs.fovSetting;
+            zoomSavedSensitivity = gs.mouseSensitivity;
+            zoomOverridden = true;
+        }
+
+        gs.fovSetting = ZoomMath.fovSetting(zoomSavedFov, factor);
+        gs.mouseSensitivity = ZoomMath.mouseSensitivity(zoomSavedSensitivity, factor);
+    }
+
+    @Override
+    protected void zoomRestore() {
+        if(!zoomOverridden) return;
+        zoomOverridden = false;
+
+        GameSettings gs = client.gameSettings;
+        gs.fovSetting = zoomSavedFov;
+        gs.mouseSensitivity = zoomSavedSensitivity;
+    }
+
+    @Override
+    protected int zoomConsumeScroll(boolean zoomActive) {
+        int wheel = Mouse.getDWheel();
+
+        EntityClientPlayerMP player = client.thePlayer;
+        if(player == null) return 0;
+
+        if(zoomActive && wheel != 0 && client.currentScreen == null) {
+            player.inventory.currentItem = lastHotbarSlot;
+
+            int notches = Math.max(1, Math.abs(wheel) / 120);
+            return wheel > 0 ? notches : -notches;
+        }
+
+        lastHotbarSlot = player.inventory.currentItem;
+        return 0;
+    }
+
+    public void renderChunkBorders(float partialTicks) {
+        if(!isChunkBorders()) return;
+
+        EntityLiving view = client.renderViewEntity;
+        if(view == null) return;
+
+        double camX = view.lastTickPosX + (view.posX - view.lastTickPosX) * partialTicks;
+        double camY = view.lastTickPosY + (view.posY - view.lastTickPosY) * partialTicks;
+        double camZ = view.lastTickPosZ + (view.posZ - view.lastTickPosZ) * partialTicks;
+
+        chunkBorderMesh.ensure(MathHelper.floor_double(view.posX) >> 4, MathHelper.floor_double(view.posZ) >> 4);
+
+        Tessellator t = Tessellator.instance;
+        t.setTranslation(-camX, -camY, -camZ);
+
+        GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT
+                | GL11.GL_LINE_BIT | GL11.GL_CURRENT_BIT);
+        try {
+            GL11.glDisable(GL11.GL_TEXTURE_2D);
+            GL11.glDisable(GL11.GL_LIGHTING);
+            GL11.glDisable(GL11.GL_FOG);
+            GL11.glDisable(GL11.GL_ALPHA_TEST);
+            GL11.glEnable(GL11.GL_BLEND);
+            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            GL11.glDepthMask(false);
+
+            drawLines(t, chunkBorderMesh.corners(), 1.0F, 0.0F, 0.0F, 0.5F, 1.0F);
+            drawLines(t, chunkBorderMesh.grid(), 1.0F, 1.0F, 0.0F, 1.0F, 1.0F);
+            drawLines(t, chunkBorderMesh.sections(), 0.25F, 0.25F, 1.0F, 1.0F, 2.0F);
+        } finally {
+            GL11.glPopAttrib();
+            t.setTranslation(0.0D, 0.0D, 0.0D);
+        }
+    }
+
+    private static void drawLines(Tessellator t, double[] xyz, float r, float g, float b, float a, float width) {
+        GL11.glLineWidth(width);
+        t.startDrawing(GL11.GL_LINES);
+        t.setColorRGBA_F(r, g, b, a);
+        for(int i = 0; i < xyz.length; i += 3) {
+            t.addVertex(xyz[i], xyz[i + 1], xyz[i + 2]);
+        }
+        t.draw();
+    }
+
+    private static final int ENCHANT_GUI_WIDTH = 176;
+    private static final int ENCHANT_GUI_HEIGHT = 166;
+    private static final int PREVIEW_MARGIN = 6;
+    private static final int PREVIEW_PADDING = 4;
+    private static final int PREVIEW_LINE_HEIGHT = 10;
+
+    public void renderEnchantPreview() {
+        EntityClientPlayerMP player = client.thePlayer;
+        GuiScreen screen = client.currentScreen;
+        if(player == null || screen == null) return;
+        if(!(player.craftingInventory instanceof ContainerEnchantment)) return;
+
+        ContainerEnchantment table = (ContainerEnchantment) player.craftingInventory;
+        EnchantPreview preview = ClientEnchantState.get();
+        if(!previewMatches(preview, table)) return;
+
+        List<String> text = new ArrayList<String>();
+        List<Integer> color = new ArrayList<Integer>();
+
+        text.add("Enchant Preview");
+        color.add(Integer.valueOf(0xFFAA00));
+
+        for(int slot = 0; slot < EnchantPreview.SLOTS; slot++) {
+            int cost = preview.costs[slot];
+            if(cost <= 0) continue;
+
+            boolean affordable = player.capabilities.isCreativeMode || player.experienceLevel >= cost;
+            text.add("Slot " + (slot + 1) + " (level " + cost + ")");
+            color.add(Integer.valueOf(affordable ? 0x55FF55 : 0xFF5555));
+
+            int[] ids = preview.ids[slot];
+            if(ids.length == 0) {
+                text.add("  nothing");
+                color.add(Integer.valueOf(0xAAAAAA));
+            }
+            for(int i = 0; i < ids.length; i++) {
+                text.add("  " + enchantmentName(ids[i], preview.strengths[slot][i]));
+                color.add(Integer.valueOf(0xFFFFFF));
+            }
+        }
+
+        if(text.size() == 1) return;
+
+        FontRenderer font = client.fontRenderer;
+        int widest = 0;
+        for(String line : text) {
+            widest = Math.max(widest, font.getStringWidth(line));
+        }
+
+        int panelWidth = widest + PREVIEW_PADDING * 2;
+        int panelHeight = text.size() * PREVIEW_LINE_HEIGHT + PREVIEW_PADDING * 2 - 2;
+
+        int guiLeft = (screen.width - ENCHANT_GUI_WIDTH) / 2;
+        int guiTop = (screen.height - ENCHANT_GUI_HEIGHT) / 2;
+        int x = guiLeft + ENCHANT_GUI_WIDTH + PREVIEW_MARGIN;
+        if(x + panelWidth > screen.width - 2) x = guiLeft - PREVIEW_MARGIN - panelWidth;
+        if(x < 2) x = 2;
+
+        client.entityRenderer.setupOverlayRendering();
+
+        GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_CURRENT_BIT);
+        try {
+            GL11.glDisable(GL11.GL_LIGHTING);
+            GL11.glDisable(GL11.GL_DEPTH_TEST);
+            GL11.glEnable(GL11.GL_BLEND);
+            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+            fillRect(x, guiTop, x + panelWidth, guiTop + panelHeight, 0.0F, 0.0F, 0.0F, 0.65F);
+
+            for(int i = 0; i < text.size(); i++) {
+                font.drawStringWithShadow(text.get(i), x + PREVIEW_PADDING,
+                        guiTop + PREVIEW_PADDING + i * PREVIEW_LINE_HEIGHT, color.get(i).intValue());
+            }
+        } finally {
+            GL11.glPopAttrib();
+        }
+    }
+
+    private static boolean previewMatches(EnchantPreview preview, ContainerEnchantment table) {
+        if(preview == null || preview.windowId != table.windowId) return false;
+
+        for(int i = 0; i < EnchantPreview.SLOTS; i++) {
+            if(preview.costs[i] != table.enchantLevels[i]) return false;
+        }
+        return true;
+    }
+
+    private static String enchantmentName(int id, int strength) {
+        Enchantment enchantment = id >= 0 && id < Enchantment.enchantmentsList.length ? Enchantment.enchantmentsList[id] : null;
+        return enchantment != null ? enchantment.getTranslatedName(strength) : "Unknown (" + id + ") " + strength;
+    }
+
+    private static void fillRect(int x0, int y0, int x1, int y1, float r, float g, float b, float a) {
+        GL11.glDisable(GL11.GL_TEXTURE_2D);
+        Tessellator t = Tessellator.instance;
+        t.startDrawingQuads();
+        t.setColorRGBA_F(r, g, b, a);
+        t.addVertex(x0, y1, 0.0D);
+        t.addVertex(x1, y1, 0.0D);
+        t.addVertex(x1, y0, 0.0D);
+        t.addVertex(x0, y0, 0.0D);
+        t.draw();
+        GL11.glEnable(GL11.GL_TEXTURE_2D);
     }
 }

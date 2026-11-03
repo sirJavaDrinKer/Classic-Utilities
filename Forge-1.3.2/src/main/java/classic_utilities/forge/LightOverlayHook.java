@@ -14,5 +14,6 @@ public class LightOverlayHook {
     @ForgeSubscribe
     public void onRenderWorldLast(RenderWorldLastEvent event) {
         mod.renderLightOverlay(event.partialTicks);
+        mod.renderChunkBorders(event.partialTicks);
     }
 }
