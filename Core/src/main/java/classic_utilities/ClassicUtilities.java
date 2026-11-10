@@ -1,5 +1,10 @@
 package classic_utilities;
 
+import classic_utilities.math.ZoomMath;
+import classic_utilities.rendering.ChunkBorderMesh;
+import classic_utilities.rendering.HudMessage;
+import classic_utilities.world.SpawnScan;
+
 public abstract class ClassicUtilities {
     public static final String MODID = "classic_utilities";
     public static final String NAME = "Classic Utilities";

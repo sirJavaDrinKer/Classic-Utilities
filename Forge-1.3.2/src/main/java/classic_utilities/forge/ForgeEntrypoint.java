@@ -1,7 +1,9 @@
 package classic_utilities.forge;
 
 import cpw.mods.fml.common.Mod;
-import classic_utilities.EnchantProtocol;
+import classic_utilities.forge.enchant.EnchantPacketHandler;
+import classic_utilities.forge.enchant.EnchantSync;
+import classic_utilities.network.EnchantProtocol;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.registry.TickRegistry;

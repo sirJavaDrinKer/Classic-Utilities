@@ -1,6 +1,11 @@
 package classic_utilities.forge;
 
-import classic_utilities.DebugCombo;
+import classic_utilities.input.DebugCombo;
+import classic_utilities.forge.rendering.ForgeEnchantPreviewRenderer;
+import classic_utilities.forge.rendering.ForgeChunkBorderRenderer;
+import classic_utilities.forge.rendering.ForgeLightOverlayRenderer;
+import classic_utilities.forge.rendering.MessageRenderer;
+import classic_utilities.forge.rendering.WorldRenderHook;
 import cpw.mods.fml.client.registry.KeyBindingRegistry;
 import cpw.mods.fml.common.ITickHandler;
 import cpw.mods.fml.common.TickType;
@@ -20,6 +25,8 @@ public class ForgeImpl extends ClassicUtilities152 {
     private final KeyBinding LIGHT_OVERLAY_KEY = new KeyBinding("classic_utilities.lightoverlay", Keyboard.KEY_L);
     private final KeyBinding ZOOM_KEY = new KeyBinding("classic_utilities.zoom", Keyboard.KEY_C);
 
+    private final ForgeEnchantPreviewRenderer forgeEnchantPreviewRenderer = new ForgeEnchantPreviewRenderer(client);
+
     private final DebugCombo chunkBorderCombo = new DebugCombo();
 
     private boolean freecamKeyWasDown;
@@ -31,7 +38,9 @@ public class ForgeImpl extends ClassicUtilities152 {
 
         TickRegistry.registerTickHandler(new Ticker(), Side.CLIENT);
 
-        MinecraftForge.EVENT_BUS.register(new LightOverlayHook(this));
+        MinecraftForge.EVENT_BUS.register(new WorldRenderHook(this,
+                new ForgeLightOverlayRenderer(client, spawnScan),
+                new ForgeChunkBorderRenderer(client, chunkBorderMesh)));
 
         KeyBindingRegistry.registerKeyBinding(new KeyBindingRegistry.KeyHandler(new KeyBinding[] { FREECAM_KEY, FULLBRIGHT_KEY, LIGHT_OVERLAY_KEY, ZOOM_KEY }) {
             @Override
@@ -105,8 +114,8 @@ public class ForgeImpl extends ClassicUtilities152 {
             if(types.contains(TickType.RENDER)) {
                 zoomRenderEnd();
                 renderTick();
-                renderHudMessage();
-                renderEnchantPreview();
+                MessageRenderer.renderMessage(client, hudMessage);
+                forgeEnchantPreviewRenderer.render();
             }
             if(types.contains(TickType.CLIENT)) clientTickEnd();
             if(types.contains(TickType.CLIENT)) undoDebugScreenToggle();
