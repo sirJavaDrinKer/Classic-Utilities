@@ -27,8 +27,6 @@ import java.util.logging.Logger;
         useMetadata = true
 )
 public class ForgeEntrypoint {
-    private static final Logger LOG = Logger.getLogger("ForgeModLoader");
-
     @Mod.PreInit
     public void preinit(FMLPreInitializationEvent e) {
         NetworkRegistry.instance().registerChannel(new EnchantPacketHandler(), EnchantProtocol.CHANNEL);

@@ -4,6 +4,7 @@ import classic_utilities.forge.options.OptionsClient;
 import classic_utilities.options.ClientOptions;
 import classic_utilities.options.ClientWorldOptions;
 import classic_utilities.options.WorldOptions;
+import classic_utilities.update.UpdateInstaller;
 import classic_utilities.util.JavaVersion;
 import net.minecraft.src.GuiButton;
 import net.minecraft.src.GuiScreen;
@@ -14,6 +15,7 @@ public class GuiOptionsMenu extends GuiScreen {
     private static final int NEXT_BUTTON_ID = 2;
     private static final int WORLD_BUTTON_BASE = 100;
     private static final int CLIENT_BUTTON_BASE = 200;
+    private static final int UPDATE_LINE_BOTTOM_MARGIN = 10;
 
     private static final int PAGE_FEATURES = 0;
     private static final int PAGE_GAMEPLAY = 1;
@@ -184,6 +186,39 @@ public class GuiOptionsMenu extends GuiScreen {
     }
 
     @Override
+    protected void mouseClicked(int mouseX, int mouseY, int button) {
+        super.mouseClicked(mouseX, mouseY, button);
+        if(button == 0 && UpdateInstaller.isClickable() && overUpdateLine(mouseX, mouseY)) {
+            UpdateInstaller.click();
+        }
+    }
+
+    private boolean overUpdateLine(int mouseX, int mouseY) {
+        String text = UpdateInstaller.statusText();
+        if(text == null) return false;
+        int textWidth = this.fontRenderer.getStringWidth(text);
+        int x = (this.width - textWidth) / 2;
+        int y = this.height - UPDATE_LINE_BOTTOM_MARGIN;
+        return mouseX >= x && mouseX <= x + textWidth && mouseY >= y - 1 && mouseY <= y + 9;
+    }
+
+    private void drawUpdateLine(int mouseX, int mouseY) {
+        String text = UpdateInstaller.statusText();
+        if(text == null) return;
+
+        UpdateInstaller.State state = UpdateInstaller.getState();
+        String style = "\u00a7e";
+        if(state == UpdateInstaller.State.DOWNLOADING) style = "\u00a77";
+        else if(state == UpdateInstaller.State.SUCCESS) style = "\u00a7a";
+        else if(state == UpdateInstaller.State.FAILED) style = "\u00a7c";
+
+        if(UpdateInstaller.isClickable() && overUpdateLine(mouseX, mouseY)) style += "\u00a7n";
+
+        int x = (this.width - this.fontRenderer.getStringWidth(text)) / 2;
+        this.drawString(this.fontRenderer, style + text, x, this.height - UPDATE_LINE_BOTTOM_MARGIN, 0xFFFFFF);
+    }
+
+    @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         this.drawDefaultBackground();
         this.drawCenteredString(this.fontRenderer, "CUtil Options", this.width / 2, 15, 0xFFFFFF);
@@ -197,5 +232,6 @@ public class GuiOptionsMenu extends GuiScreen {
         }
 
         super.drawScreen(mouseX, mouseY, partialTicks);
+        drawUpdateLine(mouseX, mouseY);
     }
 }

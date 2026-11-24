@@ -1,6 +1,7 @@
 package classic_utilities.forge;
 
 import classic_utilities.options.ClientOptions;
+import classic_utilities.update.UpdateChecker;
 import cpw.mods.fml.common.Mod;
 import classic_utilities.forge.options.OptionsPacketHandler;
 import classic_utilities.forge.options.OptionsPlayerTracker;
@@ -33,6 +34,7 @@ public class ForgeEntrypoint {
 
         if(e.getSide() == Side.CLIENT) {
             ClientOptions.load(new File(e.getModConfigurationDirectory(), "classic_utilities_client.properties"));
+            UpdateChecker.start(e.getModMetadata().version, "1.3.2");
             ClientOnly.start();
         }
     }

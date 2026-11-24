@@ -203,13 +203,12 @@ public class GuiOptionsMenu extends GuiScreen {
         return mouseX >= x && mouseX <= x + textWidth && mouseY >= y - 1 && mouseY <= y + 9;
     }
 
-    /** Centered line at the bottom: update available / updating / done / failed. Underlined on hover when clickable. */
     private void drawUpdateLine(int mouseX, int mouseY) {
         String text = UpdateInstaller.statusText();
         if(text == null) return;
 
         UpdateInstaller.State state = UpdateInstaller.getState();
-        String style = "\u00a7e"; // update available
+        String style = "\u00a7e";
         if(state == UpdateInstaller.State.DOWNLOADING) style = "\u00a77";
         else if(state == UpdateInstaller.State.SUCCESS) style = "\u00a7a";
         else if(state == UpdateInstaller.State.FAILED) style = "\u00a7c";
