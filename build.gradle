@@ -1,0 +1,48 @@
+subprojects {
+	apply plugin: "java"
+	project.ext.gimmeJava = (int ver) -> {
+		if(ver <= 8) {
+			java.toolchain {
+				project.logger.lifecycle("{}: configuring Java 8 toolchain", project.displayName)
+				languageVersion = JavaLanguageVersion.of(8)
+				vendor = JvmVendorSpec.ADOPTIUM
+			}
+			
+			String compat = "1." + ver
+			it.sourceCompatibility = compat
+			it.targetCompatibility = compat
+			tasks.withType(JavaCompile).configureEach {
+				project.logger.lifecycle("{}: setting source/target compatibility to {} on task {}", project.displayName, compat, it.name)
+				sourceCompatibility = compat
+				targetCompatibility = compat
+			}
+		} else {
+			java.toolchain {
+				project.logger.lifecycle("{}: configuring Java {} toolchain", project.displayName, ver)
+				languageVersion = JavaLanguageVersion.of(ver)
+				vendor = JvmVendorSpec.ADOPTIUM
+			}
+			
+			tasks.withType(JavaCompile).configureEach {
+				project.logger.lifecycle("{}: setting release to {} on task {}", project.displayName, ver, it.name)
+				options.release = ver
+			}
+		}
+	}
+	
+	tasks.withType(JavaCompile).configureEach {
+		it.options.encoding = "UTF-8"
+	}
+
+	tasks.withType(GenerateModuleMetadata) {
+		enabled = false
+	}
+
+	processResources {
+		inputs.property "version", project.version
+		
+		filesMatching(["**/mcmod.info", "**/version.properties"]) {
+			expand "version": project.version
+		}
+	}
+}
