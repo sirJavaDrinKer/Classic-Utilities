@@ -189,7 +189,11 @@ public class GuiOptionsMenu extends GuiScreen {
     protected void mouseClicked(int mouseX, int mouseY, int button) {
         super.mouseClicked(mouseX, mouseY, button);
         if(button == 0 && UpdateInstaller.isClickable() && overUpdateLine(mouseX, mouseY)) {
-            UpdateInstaller.click();
+            if(UpdateInstaller.needsWarning()) {
+                this.mc.displayGuiScreen(new GuiUpdateWarning(this));
+            } else {
+                UpdateInstaller.click();
+            }
         }
     }
 

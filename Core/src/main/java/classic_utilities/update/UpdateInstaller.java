@@ -75,6 +75,10 @@ public final class UpdateInstaller {
         }
     }
 
+    public static boolean needsWarning() {
+        return state == State.IDLE && UpdateChecker.getAvailable() != null && !UpdateConsent.isAccepted();
+    }
+
     public static boolean isClickable() {
         return state == State.FAILED || (state == State.IDLE && UpdateChecker.getAvailable() != null);
     }
@@ -87,6 +91,10 @@ public final class UpdateInstaller {
 
 
     public static boolean start() {
+        if(!UpdateConsent.isAccepted()) {
+            LOG.info("[CUtil] update not started: the update warning has not been accepted");
+            return false;
+        }
         return startWith(UpdateChecker.getAvailable(), locateRunningJar(), REAL_FS, HELPER);
     }
 
