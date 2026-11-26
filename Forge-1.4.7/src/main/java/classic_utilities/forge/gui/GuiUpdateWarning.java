@@ -4,6 +4,8 @@ import classic_utilities.update.UpdateConsent;
 import classic_utilities.update.UpdateInstaller;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.renderer.Tessellator;
+import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +19,8 @@ public class GuiUpdateWarning extends GuiScreen {
             + "and download the newest version from Modrinth.";
     private static final String CHECKBOX_LABEL = "I understand this will modify my game files.";
 
+    private static final String CHECK_TEXTURE = "/assets/classic_utilities/textures/gui/accept.png";
+
     private static final int LINE_HEIGHT = 11;
     private static final int TITLE_HEIGHT = 18;
     private static final int MAX_TEXT_WIDTH = 300;
@@ -26,10 +30,11 @@ public class GuiUpdateWarning extends GuiScreen {
     private static final int CHECKBOX_SIZE = 10;
     private static final int CHECKBOX_LABEL_GAP = 4;
 
-    private static final int BUTTON_WIDTH = 98;
-    private static final int BUTTON_HEIGHT = 20;
-    private static final int BUTTON_GAP = 4;
-    private static final int BOTTOM_MARGIN = 12;
+    // Button dimensions and spacing
+    private static final int B_WIDTH = 98;
+    private static final int B_HEIGHT = 20;
+    private static final int B_DIST = 4;
+    private static final int BOT_MARGIN = 12;
 
     private final GuiScreen parentScreen;
 
@@ -50,12 +55,12 @@ public class GuiUpdateWarning extends GuiScreen {
         this.controlList.clear();
         buildLines();
 
-        int buttonsY = this.height - BOTTOM_MARGIN - BUTTON_HEIGHT;
-        int left = this.width / 2 - BUTTON_WIDTH - BUTTON_GAP / 2;
-        continueButton = new GuiButton(CONTINUE_BUTTON_ID, left, buttonsY, BUTTON_WIDTH, BUTTON_HEIGHT, "Continue");
+        int buttonsY = this.height - BOT_MARGIN - B_HEIGHT;
+        int leftStart = this.width / 2 - B_WIDTH - B_DIST / 2;
+        continueButton = new GuiButton(CONTINUE_BUTTON_ID, leftStart, buttonsY, B_WIDTH, B_HEIGHT, "Continue");
         continueButton.enabled = checked;
         this.controlList.add(continueButton);
-        this.controlList.add(new GuiButton(CANCEL_BUTTON_ID, left + BUTTON_WIDTH + BUTTON_GAP, buttonsY, BUTTON_WIDTH, BUTTON_HEIGHT, "Cancel"));
+        this.controlList.add(new GuiButton(CANCEL_BUTTON_ID, leftStart + B_WIDTH + B_DIST, buttonsY, B_WIDTH, B_HEIGHT, "Cancel"));
 
         int blockHeight = TITLE_HEIGHT + lines.size() * LINE_HEIGHT + CHECKBOX_GAP + CHECKBOX_SIZE;
         top = Math.max(4, (buttonsY - blockHeight) / 2);
@@ -143,10 +148,20 @@ public class GuiUpdateWarning extends GuiScreen {
         drawRect(x + 1, y + 1, x + size - 1, y + size - 1, 0xFF000000);
 
         if(checked) {
-            int[][] tick = { { 2, 5 }, { 3, 6 }, { 4, 7 }, { 5, 6 }, { 6, 5 }, { 7, 4 }, { 8, 3 } };
-            for(int i = 0; i < tick.length; i++) {
-                drawRect(x + tick[i][0], y + tick[i][1], x + tick[i][0] + 1, y + tick[i][1] + 2, 0xFF55FF55);
-            }
+            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+            GL11.glEnable(GL11.GL_BLEND);
+            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture(CHECK_TEXTURE));
+
+            Tessellator t = Tessellator.instance;
+            t.startDrawingQuads();
+            t.addVertexWithUV(x, y + size, this.zLevel, 0.0D, 1.0D);
+            t.addVertexWithUV(x + size, y + size, this.zLevel, 1.0D, 1.0D);
+            t.addVertexWithUV(x + size, y, this.zLevel, 1.0D, 0.0D);
+            t.addVertexWithUV(x, y, this.zLevel, 0.0D, 0.0D);
+            t.draw();
+
+            GL11.glDisable(GL11.GL_BLEND);
         }
 
         this.drawString(this.fontRenderer, CHECKBOX_LABEL, x + size + CHECKBOX_LABEL_GAP, y + 1, 0xE0E0E0);

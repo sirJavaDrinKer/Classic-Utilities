@@ -4,6 +4,8 @@ import classic_utilities.update.UpdateConsent;
 import classic_utilities.update.UpdateInstaller;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.renderer.Tessellator;
+import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +23,8 @@ public class GuiUpdateWarning extends GuiScreen {
     private static final int TITLE_HEIGHT = 18;
     private static final int MAX_TEXT_WIDTH = 300;
     private static final int SIDE_MARGIN = 20;
+
+    private static final String CHECK_TEXTURE = "/assets/classic_utilities/textures/gui/accept.png";
 
     private static final int CHECKBOX_GAP = 10;
     private static final int CHECKBOX_SIZE = 10;
@@ -140,13 +144,23 @@ public class GuiUpdateWarning extends GuiScreen {
         int size = CHECKBOX_SIZE;
 
         drawRect(x, y, x + size, y + size, overCheckbox(mouseX, mouseY) ? 0xFFFFFFFF : 0xFFA0A0A0);
-        drawRect(x + 1, y + 1, x + size - 1, y + size - 1, 0x80000000);
+        drawRect(x + 1, y + 1, x + size - 1, y + size - 1, 0xFF000000);
 
         if(checked) {
-            int[][] tick = { { 2, 5 }, { 3, 6 }, { 4, 7 }, { 5, 6 }, { 6, 5 }, { 7, 4 }, { 8, 3 } };
-            for(int i = 0; i < tick.length; i++) {
-                drawRect(x + tick[i][0], y + tick[i][1], x + tick[i][0] + 1, y + tick[i][1] + 2, 0xFF55FF55);
-            }
+            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+            GL11.glEnable(GL11.GL_BLEND);
+            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture(CHECK_TEXTURE));
+
+            Tessellator t = Tessellator.instance;
+            t.startDrawingQuads();
+            t.addVertexWithUV(x, y + size, this.zLevel, 0.0D, 1.0D);
+            t.addVertexWithUV(x + size, y + size, this.zLevel, 1.0D, 1.0D);
+            t.addVertexWithUV(x + size, y, this.zLevel, 1.0D, 0.0D);
+            t.addVertexWithUV(x, y, this.zLevel, 0.0D, 0.0D);
+            t.draw();
+
+            GL11.glDisable(GL11.GL_BLEND);
         }
 
         this.drawString(this.fontRenderer, CHECKBOX_LABEL, x + size + CHECKBOX_LABEL_GAP, y + 1, 0xE0E0E0);
